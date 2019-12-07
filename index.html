@@ -1,0 +1,201 @@
+
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Chanpongram Map</title>
+</head>
+
+<body onload="displayMap()">
+<!-- テスト用。本物は結果をdisplay関数に渡す予定 -->
+<!-- <button onclick="display('ちゃんぽん リンガーハット')">ボタン</button> -->
+<!-- 地図表示 -->
+<div id="sample" style="width:350px; height:550px"></div>
+
+<script>
+//変数
+var root = 0;
+var map;
+var marker = [];
+var tgt_marker;
+var infoWindow = [];
+var tgt_infoWindow;
+var tgt_img = 'food_chanpon.png'
+var img_size = [50,50];
+
+//座標テーブル
+var table = {"レッドランタン":[32.7439666,129.8706342,"https://tabelog.com/nagasaki/A4201/A420101/42000492/"],
+"四海楼":[32.7365337,129.8697652,"https://tabelog.com/nagasaki/A4201/A420101/42000053/"],
+"リンガーハット":[32.744708, 129.870958,"https://tabelog.com/nagasaki/A4201/A420101/42005820/"],
+"江山楼":[32.741247,129.8735351,"https://tabelog.com/nagasaki/A4201/A420101/42000055/"],
+"出島亭":[32.741653, 129.875236,"https://tabelog.com/nagasaki/A4201/A420101/42000603/"],
+"中華菜館 福壽":[32.742189, 129.874976,"https://tabelog.com/nagasaki/A4201/A420101/42000604/"],
+"じゅん食堂":[32.7583968,129.8785494,"https://tabelog.com/nagasaki/A4201/A420101/42004560/"],
+"ニュー小浜":[32.7293076,130.207431,"https://tabelog.com/nagasaki/A4203/A420301/42006325/"],
+"もりとう食堂":[33.3719779,129.5541823,"https://tabelog.com/nagasaki/A4202/A420202/42003562/"],
+"よしちょう":[32.725701,130.2052014,"https://tabelog.com/nagasaki/A4203/A420301/42000655/"],
+"一楽食堂":[33.368262,129.552766,"https://tabelog.com/nagasaki/A4202/A420202/42003467/"],
+"牡丹":[32.9145399,129.9221706,"https://tabelog.com/nagasaki/A4204/A420402/42000044/"],
+"海花亭":[32.7309745,130.206871,"https://tabelog.com/nagasaki/A4203/A420301/42006127/"],
+"思案橋ラーメン":[32.7431034,129.8792238,"https://tabelog.com/nagasaki/A4201/A420101/42000481/"],
+"大盛":[32.720565,130.203032,"https://tabelog.com/nagasaki/A4203/A420301/42006916/"],
+"龍食堂":[32.7161791,130.1952192,"https://tabelog.com/nagasaki/A4203/A420301/42000751/"]};
+
+//初期表示地図情報
+var center = {
+  lat: 32.742109, // 緯度
+  lng: 129.871688 // 経度
+};
+var storename = "CO-DEJIMA";
+var store_adress = "https://tabelog.com/nagasaki/A4201/A420101/42005820/"
+var start_lat = 32.742109;
+var start_lng = 129.871688;
+var var_lat = start_lat;
+var var_lng = start_lng;
+//認識結果を渡して緯度経度情報を取得し、地図描画へ投げる
+//（形式は「料理名 店名」）
+function display(var_name) {
+    var word = var_name.split(' ');
+    if(word.length==2)
+    {
+        var_sname = word[1];
+        var_lat = table[var_sname][0];
+        var_lng = table[var_sname][1];
+        store_adress = table[var_sname][2];
+        storename = var_sname;
+        initMap2();
+    }
+    else if(word.length==3)
+    {
+        var_sname = word[1] + ' ' + word[2];
+        var_lat = table[var_sname][0];
+        var_lng = table[var_sname][1];
+        store_adress = table[var_sname][2];
+        storename = var_sname;
+        initMap2();
+    }
+}
+
+//地図情報設定
+function initMap() {
+    map = new google.maps.Map(document.getElementById('sample'), { // #sampleに地図を埋め込む
+        center: new google.maps.LatLng(var_lat, var_lng), // 地図の中心を指定
+        zoom: 19 // 地図のズームを指定
+    });
+
+    tgt_marker = new google.maps.Marker({ // マーカーの追加
+        position: new google.maps.LatLng(var_lat, var_lng), // マーカーを立てる位置を指定
+        map: map // マーカーを立てる地図を指定
+    });
+
+    tgt_infoWindow = new google.maps.InfoWindow({ // 吹き出しの追加
+        content: '<div class="sample">'+storename+'</div>' // 吹き出しに表示する内容
+    });
+    tgt_marker.addListener('click', function() { // マーカーをクリックしたとき
+        tgt_infoWindow.open(map, tgt_marker); // 吹き出しの表示
+    });
+
+}
+function initMap2 () {
+    var directionsDisplay;
+    var directionsService = new google.maps.DirectionsService();
+    var directionsRenderer = new google.maps.DirectionsRenderer();
+    var map;
+
+    // mapの表示時の中心点を決めている(ルート案内に失敗したときのデフォルト画面)
+    directionsDisplay = new google.maps.DirectionsRenderer();
+    var mapOptions = {
+        zoom: 7,
+        center: new google.maps.LatLng(start_lat, start_lng)
+    }
+
+    // mapの表示
+    map = new google.maps.Map(document.getElementById("sample"), mapOptions);
+    directionsDisplay.setMap(map);
+
+    // directionServiceに渡す変数
+    // 出発地点、目的地、移動方法等を定義する
+    var request = {
+        origin: new google.maps.LatLng(start_lat, start_lng),
+        destination: new google.maps.LatLng(var_lat,var_lng),
+        travelMode: google.maps.TravelMode.WALKING
+    }
+
+    directionsService.route(request, function(result, status) {
+        if (status == google.maps.DirectionsStatus.OK) {
+            directionsRenderer.setOptions({
+                suppressMarkers: true
+            });
+            directionsRenderer.setMap(map);
+            directionsRenderer.setDirections(result);
+        }
+    });
+    // マーカー毎の処理
+    i = 0;
+    for (key in table) {
+        if(key!=storename)
+        {
+            markerLatLng = new google.maps.LatLng({lat: table[key][0], lng: table[key][1]}); // 緯度経度のデータ作成
+            marker[i] = new google.maps.Marker({ // マーカーの追加
+            position: markerLatLng, // マーカーを立てる位置を指定
+                map: map // マーカーを立てる地図を指定
+          });
+    
+            infoWindow[i] = new google.maps.InfoWindow({ // 吹き出しの追加
+                content: '<div class="sample">'+"<a href=" + table[key][2] +">"+key+"</a>"+'</div>' // 吹き出しに表示する内容
+            });
+        
+            markerEvent(i,key); // マーカーにクリックイベントを追加
+            i++;
+        }
+    }
+    tgt_marker = new google.maps.Marker({ // マーカーの追加
+        position: new google.maps.LatLng(var_lat, var_lng), // マーカーを立てる位置を指定
+        map: map, // マーカーを立てる地図を指定
+        icon: {
+		url: tgt_img,                      //アイコンのURL
+		scaledSize: new google.maps.Size(img_size[0], img_size[1]) //サイズ
+	    }
+    });
+
+    tgt_infoWindow = new google.maps.InfoWindow({ // 吹き出しの追加
+            content: '<div class="sample">'+"<a href="+store_adress+">"+storename+"</a>"+'</div>' // 吹き出しに表示する内容
+    });
+    tgt_infoWindow.open(map, tgt_marker); 
+    tgt_marker.addListener('click', function() { // マーカーをクリックしたとき
+        tgt_infoWindow.open(map, tgt_marker); // 吹き出しの表示
+    });
+    tgt_marker.addListener('dblclick', function() { // マーカーをクリックしたとき
+        re_disp(storename) // ルート再探索
+    });
+}
+// マーカーにクリックイベントを追加
+function markerEvent(i,key) {
+    marker[i].addListener('click', function() { // マーカーをクリックしたとき
+      infoWindow[i].open(map, marker[i]); // 吹き出しの表示
+  });
+  marker[i].addListener('dblclick', function() { // マーカーをクリックしたとき
+        re_disp(key) // ルート再探索
+    });
+}
+function re_disp(key)
+{
+    var_lat = table[key][0];
+    var_lng = table[key][1];
+    store_adress = table[key][2];
+    storename = key;
+    initMap2();
+}
+
+function displayMap(){
+    const parameters = decodeURI(location.search).substring(1).split('&');
+    const kind = parameters[0].split('=')[1];
+    const name = parameters[1].split('=')[1];
+    display(kind + ' ' + name);
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC9x-YxolbemkpmOcfpgNktMn0teOmsNuk&callback=initMap"></script>
+</body>
+</html>
