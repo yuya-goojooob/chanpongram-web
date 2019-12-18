@@ -22,14 +22,16 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import { Component, Prop, Vue } from 'nuxt-property-decorator';
 import Card from '@/components/Card.vue';
 
-export default Vue.extend({
-  name: 'HelloWorld',
+@Component({
   components: {
-    Card,
-  },
-  props:['cards'],
-});
+    Card
+  }
+})
+export default class Timeline extends Vue {
+  @Prop() private cards!: any;
+}
+
 </script>

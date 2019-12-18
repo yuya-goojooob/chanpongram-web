@@ -18,7 +18,7 @@
     </v-app-bar>
 
     <v-content>
-      <HelloWorld :cards="sortedCards"/>
+      <Timeline :cards="sortedCards"/>
     </v-content>
 
     <v-bottom-navigation
@@ -52,7 +52,7 @@
 
 <script lang="ts">
 import Vue from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
+import Timeline from '@/components/Timeline.vue';
 import axios from 'axios';
 import AzureStorage from 'azure-storage';
 
@@ -65,7 +65,7 @@ export default Vue.extend({
   name: 'App',
 
   components: {
-    HelloWorld,
+    Timeline,
   },
 
   data: () => (instaData),
